@@ -3,7 +3,7 @@ from torch.autograd import Variable
 import torch
 import numpy as np
 
-BASE_INPUT_SIZE = 32
+BASE_INPUT_SIZE = 48
 NUM_CLASSES = 43
 
 
@@ -38,7 +38,7 @@ class Classifier(nn.Module):
 
     def forward(self, input):
         # input = input.view(-1, self.input_nbr)
-        return self.lin(input)
+        return nn.functional.log_softmax(self.lin(input))
 
 
 def get_convs_output_size(network, input_size=BASE_INPUT_SIZE):
