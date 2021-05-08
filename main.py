@@ -56,13 +56,19 @@ val_loader = torch.utils.data.DataLoader(
 from model import Net
 from networks import IDSIANetwork, GeneralNetwork
 model = IDSIANetwork(args)
+cuda_available = torch.cuda.is_available()
 
+if cuda_available:
+    model = model.cuda()
 optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
 def train(epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = Variable(data), Variable(target)
+
+        if cuda_available:
+            data, target = data.cuda(), target.cuda()
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
@@ -79,6 +85,9 @@ def validation():
     correct = 0
     for data, target in val_loader:
         data, target = Variable(data, volatile=True), Variable(target)
+
+        if cuda_available:
+            data, target = data.cuda(), target.cuda()
         output = model(data)
         validation_loss += F.nll_loss(output, target, size_average=False).data[0] # sum up batch loss
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
