@@ -7,8 +7,6 @@ import cv2
 
 def preprocess_img(data):
     img = np.array(data)
-    cv2.imshow('image', img)
-    cv2.waitKey()
     # Histogram normalization in v channel
     hsv = color.rgb2hsv(img)
     hsv[:, :, 2] = exposure.equalize_hist(hsv[:, :, 2])
