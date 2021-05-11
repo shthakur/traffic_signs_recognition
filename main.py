@@ -31,7 +31,7 @@ parser.add_argument('--locnet2', type=str, default=None, metavar='LN2',
                     help="Number of filters per CNN layer")
 parser.add_argument('--locnet3', type=str, default=None, metavar='LN3',
                     help="Number of filters per CNN layer")
-parser.add_argument('--st', type=bool, default=True, metavar='ST',
+parser.add_argument('--st', action='store_true',
                     help="Specifies if we want to use spatial transformer networks")
 
 args = parser.parse_args()
