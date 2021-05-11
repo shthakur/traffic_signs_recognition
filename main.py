@@ -33,6 +33,7 @@ parser.add_argument('--locnet3', type=str, default=None, metavar='LN3',
                     help="Number of filters per CNN layer")
 parser.add_argument('--st', action='store_true',
                     help="Specifies if we want to use spatial transformer networks")
+parser.add_argument('--save_loc', type=str, default=".", help="Location to save model")
 
 args = parser.parse_args()
 
@@ -79,11 +80,12 @@ def train(epoch):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.data[0]))
 
-def validation():
+
+def validation(loader, loader_type):
     model.eval()
     validation_loss = 0
     correct = 0
-    for data, target in val_loader:
+    for data, target in loader:
         data, target = Variable(data, volatile=True), Variable(target)
 
         if cuda_available:
@@ -93,24 +95,25 @@ def validation():
         pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
         correct += pred.eq(target.data.view_as(pred)).cpu().sum()
 
-    validation_loss /= len(val_loader.dataset)
-    print('\nValidation set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        validation_loss, correct, len(val_loader.dataset),
-        100. * correct / len(val_loader.dataset)))
+    validation_loss /= len(loader.dataset)
+    print('\n' + loader_type + ' set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        validation_loss, correct, len(loader.dataset),
+        100. * correct / len(loader.dataset)))
 
-    return 100 * correct / len(val_loader.dataset)
+    return 100 * correct / len(loader.dataset)
 
 
 best_acc = 0
 for epoch in range(1, args.epochs + 1):
     train(epoch)
-    val_acc = validation()
+    validation(train_loader, 'Train')
+    val_acc = validation(val_loader, 'Validation')
     if val_acc > best_acc:
         best_acc = val_acc
-        model_file = 'model_best.pth'
+        model_file = args.save_loc + '/model_best.pth'
 
         if args.st:
-            model_file = 'model_best_st.pth'
+            model_file = args.save_loc + '/model_best_st.pth'
 
         torch.save(model.state_dict(), model_file)
         print('\nSaved model to ' + model_file + '. You can run `python evaluate.py ' + model_file + '` to generate the Kaggle formatted csv file')
