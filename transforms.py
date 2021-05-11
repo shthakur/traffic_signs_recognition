@@ -2,7 +2,6 @@ import numpy as np
 from skimage import color, exposure, transform
 from constants import IMG_SIZE
 from PIL import Image
-import cv2
 
 
 def preprocess_img(data):

@@ -98,10 +98,15 @@ def validation():
         validation_loss, correct, len(val_loader.dataset),
         100. * correct / len(val_loader.dataset)))
 
+    return 100 * correct / len(val_loader.dataset)
 
+
+best_acc = 0
 for epoch in range(1, args.epochs + 1):
     train(epoch)
-    validation()
-    model_file = 'model_' + str(epoch) + '.pth'
-    torch.save(model.state_dict(), model_file)
-    print('\nSaved model to ' + model_file + '. You can run `python evaluate.py ' + model_file + '` to generate the Kaggle formatted csv file')
+    val_acc = validation()
+    if val_acc > best_acc:
+        best_acc = val_acc
+        model_file = 'model_best.pth'
+        torch.save(model.state_dict(), model_file)
+        print('\nSaved model to ' + model_file + '. You can run `python evaluate.py ' + model_file + '` to generate the Kaggle formatted csv file')
