@@ -108,5 +108,9 @@ for epoch in range(1, args.epochs + 1):
     if val_acc > best_acc:
         best_acc = val_acc
         model_file = 'model_best.pth'
+
+        if args.st:
+            model_file = 'model_best_st.pth'
+
         torch.save(model.state_dict(), model_file)
         print('\nSaved model to ' + model_file + '. You can run `python evaluate.py ' + model_file + '` to generate the Kaggle formatted csv file')
