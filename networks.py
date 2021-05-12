@@ -45,6 +45,7 @@ class GeneralNetwork(nn.Module):
                                                       [5, 3],
                                                       current_size,
                                                       conv_params[0])
+        self.dropout = nn.Dropout2d()
 
     def forward(self, x):
         if self.locnet_1:
@@ -55,7 +56,7 @@ class GeneralNetwork(nn.Module):
         if self.locnet_2:
             x = self.locnet_2(x)
 
-        return self.classifier(self.fc(self.conv2(x)))
+        return self.classifier(self.fc(self.dropout(self.conv2(x))))
 
 
 class IDSIANetwork(GeneralNetwork):
@@ -90,10 +91,13 @@ class IDSIANetwork(GeneralNetwork):
             x = self.locnet_2(x)
 
         x = self.conv2(x)
+        x = self.dropout(x)
 
         if self.locnet_3:
             x = self.locnet_3(x)
+
         x = self.conv3(x)
+        x = self.dropout(x)
 
         x = x.view(x.size()[0], -1)
         return self.classifier(self.fc(x))
