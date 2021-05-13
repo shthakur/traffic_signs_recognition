@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import torchvision.datasets as datasets
 
 from data import initialize_data # data.py in the same folder
-from model import Net
+from networks import IDSIANetwork
 
 parser = argparse.ArgumentParser(description='PyTorch GTSRB evaluation script')
 parser.add_argument('--data', type=str, default='data', metavar='D',
@@ -19,11 +19,17 @@ parser.add_argument('--model', type=str, metavar='M',
                     help="the model file to be evaluated. Usually it is of the form model_X.pth")
 parser.add_argument('--outfile', type=str, default='gtsrb_kaggle.csv', metavar='D',
                     help="name of the output csv file")
+parser.add_argument('--locnet', type=str, default=None, metavar='LN',
+                    help="Number of filters per CNN layer")
+parser.add_argument('--locnet2', type=str, default=None, metavar='LN2',
+                    help="Number of filters per CNN layer")
+parser.add_argument('--locnet3', type=str, default=None, metavar='LN3',
+                    help="Number of filters per CNN layer")
 
 args = parser.parse_args()
 
 state_dict = torch.load(args.model)
-model = Net()
+model = IDSIANetwork(args)
 model.load_state_dict(state_dict)
 model.eval()
 
@@ -56,6 +62,3 @@ output_file.close()
 
 print("Succesfully wrote " + args.outfile + ', you can upload this file to the kaggle '
       'competition at https://www.kaggle.com/c/nyu-cv-fall-2017/')
-        
-
-
