@@ -19,6 +19,8 @@ parser.add_argument('--model', type=str, metavar='M',
                     help="the model file to be evaluated. Usually it is of the form model_X.pth")
 parser.add_argument('--outfile', type=str, default='gtsrb_kaggle.csv', metavar='D',
                     help="name of the output csv file")
+parser.add_argument('--cnn', type=str, default=None, metavar='C',
+                    help="CNN layers")
 parser.add_argument('--locnet', type=str, default=None, metavar='LN',
                     help="Number of filters per CNN layer")
 parser.add_argument('--locnet2', type=str, default=None, metavar='LN2',
