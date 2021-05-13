@@ -28,9 +28,23 @@ parser.add_argument('--locnet3', type=str, default=None, metavar='LN3',
 
 args = parser.parse_args()
 
-state_dict = torch.load(args.model)
-model = IDSIANetwork(args)
-model.load_state_dict(state_dict)
+cuda_available = torch.cuda.is_available()
+
+state_dict = {}
+
+if not cuda_available:
+    state_dict = torch.load(args.model,
+                            map_location=lambda storage, location: storage)
+else:
+    state_dict = torch.load(args.model)
+
+if "args" in state_dict:
+    model = IDSIANetwork(state_dict['args'])
+    model.load_state_dict(state_dict['state_dict'])
+else:
+    model = IDSIANetwork(args)
+    model.load_state_dict(state_dict)
+
 model.eval()
 
 from data import data_transforms
@@ -53,10 +67,9 @@ for f in tqdm(os.listdir(test_dir)):
         data = Variable(data, volatile=True)
         output = model(data)
         pred = output.data.max(1, keepdim=True)[1]
-        pred += 1 # kaggle evaluator is 1-indexed, so add 1
 
         file_id = f[0:5]
-        output_file.write("%s,%d\n" % (file_id, pred))
+        output_file.write("%s,%d\n" % (file_id, pred[0][0]))
 
 output_file.close()
 

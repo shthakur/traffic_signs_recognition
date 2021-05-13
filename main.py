@@ -8,6 +8,16 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from modules.utils import plot_images
 
+# Neural Network and Optimizer
+# We define neural net in model.py so that it can be reused by the evaluate.py
+# script
+from model import Net
+from networks import IDSIANetwork, GeneralNetwork
+
+# Data Initialization and Loading
+# data.py in the same folder
+from data import initialize_data, data_transforms
+
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch GTSRB example')
 parser.add_argument('--data', type=str, default='data', metavar='D',
@@ -26,6 +36,8 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before logging training status')
 parser.add_argument('--cnn', type=str, default=None, metavar='C',
                     help="Number of filters per CNN layer")
+parser.add_argument('--model', type=str, default=None, metavar='MO',
+                    help="Location of model file if present")
 parser.add_argument('--locnet', type=str, default=None, metavar='LN',
                     help="Number of filters per CNN layer")
 parser.add_argument('--locnet2', type=str, default=None, metavar='LN2',
@@ -40,8 +52,6 @@ args = parser.parse_args()
 
 torch.manual_seed(args.seed)
 
-### Data Initialization and Loading
-from data import initialize_data, data_transforms # data.py in the same folder
 initialize_data(args.data) # extracts the zip files, makes a validation set
 
 train_loader = torch.utils.data.DataLoader(
@@ -54,16 +64,32 @@ val_loader = torch.utils.data.DataLoader(
     batch_size=args.batch_size, shuffle=False, num_workers=1)
 # plot_images(train_loader)
 
-### Neural Network and Optimizer
-# We define neural net in model.py so that it can be reused by the evaluate.py script
-from model import Net
-from networks import IDSIANetwork, GeneralNetwork
-model = IDSIANetwork(args)
 cuda_available = torch.cuda.is_available()
 
-if cuda_available:
-    model = model.cuda()
-optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+best_acc = 0
+flag = 1
+start_epoch = 1
+
+if args.model:
+    state = torch.load(args.model)
+
+    if "args" in state:
+        flag = 0
+        args = state['args']
+        model = IDSIANetwork(args)
+        model.load_state_dict(state['state_dict'])
+        optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+        optimizer.load_state_dict(state['optimizer'])
+        best_acc = state['best_prec']
+        start_epoch = state['epoch'] + 1
+if flag == 1:
+    model = IDSIANetwork(args)
+    if cuda_available:
+        model = model.cuda()
+    if args.model:
+        model.load_state_dict(torch.load(args.model))
+    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+
 
 def train(epoch):
     model.train()
@@ -105,8 +131,19 @@ def validation(loader, loader_type):
     return 100 * correct / len(loader.dataset)
 
 
-best_acc = 0
-for epoch in range(1, args.epochs + 1):
+def save_model(model_file, model, epoch, optimizer, best_acc):
+    save = {
+        'state_dict': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'best_prec': best_acc,
+        'epoch': epoch,
+        'args': args
+    }
+
+    torch.save(save, model_file)
+
+
+for epoch in range(start_epoch, args.epochs + 1):
     train(epoch)
     validation(train_loader, 'Train')
     val_acc = validation(val_loader, 'Validation')
@@ -117,5 +154,5 @@ for epoch in range(1, args.epochs + 1):
         if args.st:
             model_file = args.save_loc + '/model_best_st.pth'
 
-        torch.save(model.state_dict(), model_file)
+        save_model(model_file, model, epoch, optimizer, best_acc)
         print('\nSaved model to ' + model_file + '. You can run `python evaluate.py ' + model_file + '` to generate the Kaggle formatted csv file')
