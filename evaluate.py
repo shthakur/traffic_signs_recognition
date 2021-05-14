@@ -21,6 +21,8 @@ parser.add_argument('--outfile', type=str, default='gtsrb_kaggle.csv', metavar='
                     help="name of the output csv file")
 parser.add_argument('--cnn', type=str, default=None, metavar='C',
                     help="CNN layers")
+parser.add_argument('--st', action='store_true',
+                    help="Specifies if we want to use spatial transformer networks")
 parser.add_argument('--locnet', type=str, default=None, metavar='LN',
                     help="Number of filters per CNN layer")
 parser.add_argument('--locnet2', type=str, default=None, metavar='LN2',
