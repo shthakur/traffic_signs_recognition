@@ -6,7 +6,7 @@ class FullyConnected(nn.Module):
         super(FullyConnected, self).__init__()
         self.input_nbr = input_nbr
         self.lin = nn.Linear(input_nbr, out_nbr)
-        self.rel = nn.ReLU()
+        self.rel = nn.LeakyReLU()
         self.dropout = nn.Dropout()
 
     def forward(self, input):

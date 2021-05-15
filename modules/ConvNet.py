@@ -15,4 +15,4 @@ class ConvNet(nn.Module):
         self.max_pool2d = nn.MaxPool2d(pool_stride, stride=pool_stride)
 
     def forward(self, x):
-        return self.max_pool2d(nn.functional.relu(self.conv(x)))
+        return self.max_pool2d(nn.functional.leaky_relu(self.conv(x)))
