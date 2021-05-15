@@ -49,3 +49,13 @@ def initialize_data(folder):
                     if f.startswith('00000') or f.startswith('00001') or f.startswith('00002'):
                         # move file to validation folder
                         os.rename(train_folder + '/' + dirs + '/' + f, val_folder + '/' + dirs + '/' + f)
+
+
+def decrease_data(folder, num_max):
+    for dirs in os.listdir(folder):
+        if os.path.isdir(folder + '/' + dirs):
+            curr_max = len(os.listdir(folder + '/' + dirs)) // num_max
+            for i, f in enumerate(os.listdir(folder + '/' + dirs)):
+                if i > curr_max:
+                    print(folder + '/' + dirs + '/' + f)
+                    os.remove(folder + '/' + dirs + '/' + f)
