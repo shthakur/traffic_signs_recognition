@@ -20,7 +20,10 @@ from data import initialize_data, data_transforms
 
 
 class DotDict(dict):
-    __getattr__ = dict.get
+    def __getattr__(self, attr):
+        if attr.startswith('__'):
+            raise AttributeError
+        return self.get(attr)
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
