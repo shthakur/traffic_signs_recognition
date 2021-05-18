@@ -18,6 +18,13 @@ from networks import IDSIANetwork, GeneralNetwork
 # data.py in the same folder
 from data import initialize_data, data_transforms
 
+
+class DotDict(dict):
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
 args = {
     'data': 'data',
     'batch_size': 64,
@@ -34,6 +41,8 @@ args = {
     'save_loc': '/scratch/as10656',
     'model': None
 }
+
+args = DotDict(args)
 torch.manual_seed(args.seed)
 
 initialize_data(args.data) # extracts the zip files, makes a validation set
