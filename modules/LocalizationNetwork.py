@@ -35,7 +35,8 @@ class LocalizationNetwork(nn.Module):
         self.classifier.lin.bias.data = torch.FloatTensor([1, 0, 0, 0, 1, 0])
         self.dropout = nn.Dropout2d()
 
-    def forward(self, input):
-        conv_output = self.dropout(self.conv2(self.conv1(input)))
+    def forward(self, x):
+        x = self.dropout(self.conv1(x))
+        conv_output = self.dropout(self.conv2(x))
         conv_output = conv_output.view(conv_output.size()[0], -1)
         return self.classifier(self.fc(conv_output))

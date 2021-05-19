@@ -86,6 +86,7 @@ class IDSIANetwork(GeneralNetwork):
             x = self.locnet_1(x)
 
         x = self.conv1(x)
+        x = self.dropout(x)
 
         if self.locnet_2:
             x = self.locnet_2(x)

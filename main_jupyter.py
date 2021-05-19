@@ -32,7 +32,7 @@ args = {
     'data': 'data',
     'batch_size': 64,
     'epochs': 10,
-    'lr': 0.001,
+    'lr': 0.0001,
     'momentum': 0.5,
     'seed': 1,
     'weight': 0,
@@ -48,7 +48,8 @@ args = {
 args = DotDict(args)
 torch.manual_seed(args.seed)
 
-initialize_data(args.data) # extracts the zip files, makes a validation set
+# extracts the zip files, makes a validation set
+initialize_data(args.data)
 
 train_loader = torch.utils.data.DataLoader(
     datasets.ImageFolder(args.data + '/train_images',
