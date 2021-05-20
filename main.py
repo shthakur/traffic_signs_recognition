@@ -78,10 +78,9 @@ if args.model:
 
     if "args" in state:
         flag = 0
-        args = state['args']
-        model = IDSIANetwork(args)
+        model = IDSIANetwork(state['args'])
         model.load_state_dict(state['state_dict'])
-
+        model.cuda()
         # For Adam specifically use lr = 0.001
         optimizer = optim.Adam(model.parameters(),
                                lr=args.lr,
