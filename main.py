@@ -73,7 +73,6 @@ val_loader = torch.utils.data.DataLoader(val_dataset,
 # plot_images(train_loader)
 
 
-
 cuda_available = torch.cuda.is_available()
 
 best_acc = 0

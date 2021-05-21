@@ -3,7 +3,7 @@ import zipfile
 import os
 
 import torchvision.transforms as transforms
-from transforms import preprocess_img
+from transforms import preprocess_img, normalize_local
 # once the images are loaded, how do we pre-process them before being passed into the network
 # by default, we resize the images to 32 x 32 in size
 # and normalize them to mean = 0 and standard-deviation = 1 based on statistics collected from
@@ -12,7 +12,8 @@ data_transforms = transforms.Compose([
     # transforms.Scale((48, 48)),
     transforms.Lambda(lambda x: preprocess_img(x)),
     transforms.ToTensor(),
-    # transforms.Normalize((0.3337, 0.3064, 0.3171), ( 0.2672, 0.2564, 0.2629))
+    # transforms.Normalize((0.3337, 0.3064, 0.3171), (0.2672, 0.2564, 0.2629)),
+    # transforms.Lambda(lambda x: normalize_local(x))
 ])
 
 
