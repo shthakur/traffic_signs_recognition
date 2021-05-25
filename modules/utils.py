@@ -1,9 +1,10 @@
-from constants import IMG_SIZE
+from constants import IMG_SIZE, NUM_CLASSES
 from torch.autograd import Variable
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision import utils
+import random
 
 
 def get_convnet_output_size(network, input_size=IMG_SIZE):
@@ -35,3 +36,23 @@ def plot_images(trainloader):
 
     # show images
     imshow(utils.make_grid(images))
+
+
+def plot_classes(loader):
+    class_images = {}
+
+    for images, labels in loader:
+        for image, label in zip(images, labels):
+            if len(class_images) == NUM_CLASSES:
+                break
+            if label not in class_images:
+                class_images[label] = [image]
+            else:
+                class_images[label].append(image)
+
+        if len(class_images) == NUM_CLASSES:
+            break
+
+    final_images = [random.choice(class_images[i]) for i in sorted(class_images)]
+
+    imshow(utils.make_grid(torch.stack(final_images)))

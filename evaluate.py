@@ -51,7 +51,7 @@ else:
 
 model.eval()
 
-from data import data_transforms
+from data import data_transforms, val_data_transforms
 
 test_dir = args.data + '/test_images'
 
@@ -66,7 +66,7 @@ output_file = open(args.outfile, "w")
 output_file.write("Filename,ClassId\n")
 for f in tqdm(os.listdir(test_dir)):
     if 'ppm' in f:
-        data = data_transforms(pil_loader(test_dir + '/' + f))
+        data = val_data_transforms(pil_loader(test_dir + '/' + f))
         data = data.view(1, data.size(0), data.size(1), data.size(2))
         data = Variable(data, volatile=True)
         output = model(data)

@@ -1,3 +1,4 @@
+# %load main_jupyter.py
 from __future__ import print_function
 import argparse
 import torch
@@ -6,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-from modules.utils import plot_images
+from modules.utils import plot_images, plot_classes
 
 # Neural Network and Optimizer
 # We define neural net in model.py so that it can be reused by the evaluate.py
@@ -16,50 +17,67 @@ from networks import IDSIANetwork, GeneralNetwork
 
 # Data Initialization and Loading
 # data.py in the same folder
-from data import initialize_data, data_transforms
+from data import initialize_data, data_transforms, val_data_transforms
 
+args = argparse.Namespace()
+args.data = 'data'
+args.batch_size = 64
+args.epochs = 25
+args.lr = 0.0001
+args.momentum = 0.5
+args.seed = 1
+args.weight = 0
+args.log_interval = 10
+args.cnn = None
+args.locnet = '200, 300, 200'
+args.locnet3 = '150, 150, 150'
+args.st = True
+args.save_loc = '/scratch/as10656'
+args.model = '/scratch/as10656/model_best_st.pth'
 
-class DotDict(dict):
-    def __getattr__(self, attr):
-        if attr.startswith('__'):
-            raise AttributeError
-        return self.get(attr)
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-
-args = {
-    'data': 'data',
-    'batch_size': 64,
-    'epochs': 10,
-    'lr': 0.0001,
-    'momentum': 0.5,
-    'seed': 1,
-    'weight': 0,
-    'log_interval': 10,
-    'cnn': None,
-    'locnet': '200, 300, 200',
-    'locnet3': '150, 150, 150',
-    'st': True,
-    'save_loc': '/scratch/as10656',
-    'model': None
-}
-
-args = DotDict(args)
 torch.manual_seed(args.seed)
 
 # extracts the zip files, makes a validation set
 initialize_data(args.data)
+train_dataset = datasets.ImageFolder(args.data + '/train_images',
+                                     transform=data_transforms)
+val_dataset = datasets.ImageFolder(args.data + '/val_images',
+                                   transform=val_data_transforms)
 
-train_loader = torch.utils.data.DataLoader(
-    datasets.ImageFolder(args.data + '/train_images',
-                         transform=data_transforms),
-    batch_size=args.batch_size, shuffle=True, num_workers=1)
-val_loader = torch.utils.data.DataLoader(
-    datasets.ImageFolder(args.data + '/val_images',
-                         transform=data_transforms),
-    batch_size=args.batch_size, shuffle=False, num_workers=1)
-# plot_images(train_loader)
+
+def make_weights_for_balanced_classes(images, nclasses):
+    count = [0] * nclasses
+    for item in images:
+        count[item[1]] += 1
+    weight_per_class = [0.] * nclasses
+    N = float(sum(count))
+    for i in range(nclasses):
+        weight_per_class[i] = N / float(count[i])
+    weight = [0] * len(images)
+    for idx, val in enumerate(images):
+        weight[idx] = weight_per_class[val[1]]
+    return weight
+
+
+weights = make_weights_for_balanced_classes(train_dataset.imgs,
+                                            len(train_dataset.classes))
+weights = torch.DoubleTensor(weights)
+sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
+
+train_loader = torch.utils.data.DataLoader(train_dataset,
+                                           batch_size=args.batch_size,
+                                           shuffle=True,
+                                           num_workers=1,
+                                           sampler=sampler)
+val_loader = torch.utils.data.DataLoader(val_dataset,
+                                         batch_size=args.batch_size,
+                                         shuffle=False,
+                                         num_workers=1)
+
+
+plot_images(train_loader)
+plot_images(val_loader)
+plot_classes(val_loader)
 
 cuda_available = torch.cuda.is_available()
 
@@ -72,8 +90,8 @@ if args.model:
 
     if "args" in state:
         flag = 0
-        args = state['args']
-        model = IDSIANetwork(args)
+        model = IDSIANetwork(state['args'])
+        model.cuda()
         model.load_state_dict(state['state_dict'])
 
         # For Adam specifically use lr = 0.001

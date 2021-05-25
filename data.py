@@ -3,14 +3,32 @@ import zipfile
 import os
 
 import torchvision.transforms as transforms
-from transforms import preprocess_img, normalize_local
+from transforms import preprocess_img, normalize_local, RandomAffineTransform
 # once the images are loaded, how do we pre-process them before being passed into the network
 # by default, we resize the images to 32 x 32 in size
 # and normalize them to mean = 0 and standard-deviation = 1 based on statistics collected from
 # the training set
 data_transforms = transforms.Compose([
-    # transforms.Scale((48, 48)),
+    transforms.Resize((48, 48)),
     transforms.Lambda(lambda x: preprocess_img(x)),
+    transforms.ColorJitter(0.6, 0.6, 0.6, 0.2),
+    RandomAffineTransform(rotation_range=(-0.3, 0.3),
+                          translation_range=(-0.2, 0.2),
+                          scale_range=(0.8, 1.2),
+                          shear_range=(-0.2, 0.2)),
+    transforms.ToTensor(),
+    # transforms.Normalize((0.3337, 0.3064, 0.3171), (0.2672, 0.2564, 0.2629)),
+    # transforms.Lambda(lambda x: normalize_local(x))
+])
+
+val_data_transforms = transforms.Compose([
+    transforms.Resize((48, 48)),
+    # transforms.Lambda(lambda x: preprocess_img(x)),
+    # transforms.ColorJitter(0.6, 0.4, 0.6, 0.2),
+    # RandomAffineTransform(rotation_range=(-0.2, 0.2),
+    #                       translation_range=(-0.2, 0.2),
+    #                       scale_range=(0.9, 1.1),
+    #                       shear_range=(-0.1, 0.1)),
     transforms.ToTensor(),
     # transforms.Normalize((0.3337, 0.3064, 0.3171), (0.2672, 0.2564, 0.2629)),
     # transforms.Lambda(lambda x: normalize_local(x))
@@ -55,7 +73,7 @@ def initialize_data(folder):
 def decrease_data(folder, num_max):
     for dirs in os.listdir(folder):
         if os.path.isdir(folder + '/' + dirs):
-            curr_max = len(os.listdir(folder + '/' + dirs)) // num_max
+            curr_max = len(os.listdir(folder + '/' + dirs)) * num_max // 100
             for i, f in enumerate(os.listdir(folder + '/' + dirs)):
                 if i > curr_max:
                     print(folder + '/' + dirs + '/' + f)

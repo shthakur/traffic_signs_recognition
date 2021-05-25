@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
-from modules.utils import plot_images
+from modules.utils import plot_images, plot_classes
 
 # Neural Network and Optimizer
 # We define neural net in model.py so that it can be reused by the evaluate.py
@@ -16,7 +16,7 @@ from networks import IDSIANetwork, GeneralNetwork
 
 # Data Initialization and Loading
 # data.py in the same folder
-from data import initialize_data, data_transforms
+from data import initialize_data, data_transforms, val_data_transforms
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch GTSRB example')
@@ -60,18 +60,47 @@ initialize_data(args.data) # extracts the zip files, makes a validation set
 train_dataset = datasets.ImageFolder(args.data + '/train_images',
                                      transform=data_transforms)
 val_dataset = datasets.ImageFolder(args.data + '/val_images',
-                                   transform=data_transforms)
+                                   transform=val_data_transforms)
+
+
+def make_weights_for_balanced_classes(images, nclasses):
+    count = [0] * nclasses
+    for item in images:
+        count[item[1]] += 1
+    weight_per_class = [0.] * nclasses
+    N = float(sum(count))
+    for i in range(nclasses):
+        weight_per_class[i] = N / float(count[i])
+
+    weight = [0] * len(images)
+    for idx, val in enumerate(images):
+        weight[idx] = weight_per_class[val[1]]
+    return weight
+
+
+weights = make_weights_for_balanced_classes(train_dataset.imgs,
+                                            len(train_dataset.classes))
+weights = torch.DoubleTensor(weights)
+sampler = torch.utils.data.sampler.WeightedRandomSampler(weights, len(weights))
 
 train_loader = torch.utils.data.DataLoader(train_dataset,
                                            batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=1)
+                                           shuffle=False,
+                                           num_workers=1,
+                                           sampler=sampler)
+# train_loader = torch.utils.data.DataLoader(train_dataset,
+#                                            batch_size=args.batch_size,
+#                                            shuffle=True,
+#                                            num_workers=1)
+
 val_loader = torch.utils.data.DataLoader(val_dataset,
                                          batch_size=args.batch_size,
                                          shuffle=False,
                                          num_workers=1)
-# plot_images(train_loader)
 
+plot_images(train_loader)
+plot_images(val_loader)
+plot_classes(val_loader)
 
 cuda_available = torch.cuda.is_available()
 
@@ -103,6 +132,8 @@ if flag == 1:
     optimizer = optim.Adam(model.parameters(),
                            lr=args.lr,
                            weight_decay=args.weight)
+
+print(best_acc)
 
 
 def train(epoch):
@@ -157,7 +188,7 @@ def save_model(model_file, model, epoch, optimizer, best_acc):
     torch.save(save, model_file)
 
 
-for epoch in range(start_epoch, args.epochs + 1):
+for epoch in range(0, args.epochs + 1):
     train(epoch)
     validation(train_loader, 'Train')
     val_acc = validation(val_loader, 'Validation')

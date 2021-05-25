@@ -22,9 +22,11 @@ class LocalizationNetwork(nn.Module):
             raise Exception("Number of kernel sizes != 2")
 
         self.conv1 = ConvNet(input_channels, conv_params[0],
-                             kernel_size=kernel_sizes[0])
+                             kernel_size=kernel_sizes[0],
+                             batch_norm=False)
         self.conv2 = ConvNet(conv_params[0], conv_params[1],
-                             kernel_size=kernel_sizes[1])
+                             kernel_size=kernel_sizes[1],
+                             batch_norm=False)
         conv_output_size, _ = get_convnet_output_size([self.conv1, self.conv2],
                                                       input_size)
 
