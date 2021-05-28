@@ -5,7 +5,7 @@ from constants import IMG_SIZE
 
 class SpatialTransformerNetwork(nn.Module):
     def __init__(self, params, kernel_sizes, input_size=IMG_SIZE,
-                 input_channels=3):
+                 input_channels=1):
         super(SpatialTransformerNetwork, self).__init__()
         self.localization_network = LocalizationNetwork(params,
                                                         kernel_sizes,

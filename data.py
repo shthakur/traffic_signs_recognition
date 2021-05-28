@@ -1,38 +1,23 @@
 from __future__ import print_function
 import zipfile
 import os
-
+import torch
 import torchvision.transforms as transforms
 from transforms import preprocess_img, normalize_local, RandomAffineTransform
-# once the images are loaded, how do we pre-process them before being passed into the network
-# by default, we resize the images to 32 x 32 in size
-# and normalize them to mean = 0 and standard-deviation = 1 based on statistics collected from
-# the training set
-data_transforms = transforms.Compose([
-    transforms.Resize((48, 48)),
-    transforms.Lambda(lambda x: preprocess_img(x)),
-    transforms.ColorJitter(0.6, 0.6, 0.6, 0.2),
-    RandomAffineTransform(rotation_range=(-0.3, 0.3),
-                          translation_range=(-0.2, 0.2),
-                          scale_range=(0.8, 1.2),
-                          shear_range=(-0.2, 0.2)),
-    transforms.ToTensor(),
-    # transforms.Normalize((0.3337, 0.3064, 0.3171), (0.2672, 0.2564, 0.2629)),
-    # transforms.Lambda(lambda x: normalize_local(x))
-])
+from torch.utils.data import Dataset
 
-val_data_transforms = transforms.Compose([
-    transforms.Resize((48, 48)),
-    # transforms.Lambda(lambda x: preprocess_img(x)),
-    # transforms.ColorJitter(0.6, 0.4, 0.6, 0.2),
-    # RandomAffineTransform(rotation_range=(-0.2, 0.2),
-    #                       translation_range=(-0.2, 0.2),
-    #                       scale_range=(0.9, 1.1),
-    #                       shear_range=(-0.1, 0.1)),
-    transforms.ToTensor(),
-    # transforms.Normalize((0.3337, 0.3064, 0.3171), (0.2672, 0.2564, 0.2629)),
-    # transforms.Lambda(lambda x: normalize_local(x))
-])
+
+class TrafficSignsDataset(Dataset):
+    def __init__(self, images, labels):
+        self.images = torch.from_numpy(images)
+        self.images = self.images.permute(0, 3, 1, 2)
+        self.labels = torch.LongTensor(labels.argmax(1))
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, index):
+        return self.images[index], self.labels[index]
 
 
 def initialize_data(folder):
@@ -40,7 +25,7 @@ def initialize_data(folder):
     test_zip = folder + '/test_images.zip'
     if not os.path.exists(train_zip) or not os.path.exists(test_zip):
         raise(RuntimeError("Could not find " + train_zip + " and " + test_zip
-              + ', please download them from https://www.kaggle.com/c/nyu-cv-fall-2017/data '))
+                           + ', please download them from https://www.kaggle.com/c/nyu-cv-fall-2017/data '))
     # extract train_data.zip to train_data
     train_folder = folder + '/train_images'
     if not os.path.isdir(train_folder):
@@ -67,7 +52,8 @@ def initialize_data(folder):
                 for f in os.listdir(train_folder + '/' + dirs):
                     if f.startswith('00000') or f.startswith('00001') or f.startswith('00002'):
                         # move file to validation folder
-                        os.rename(train_folder + '/' + dirs + '/' + f, val_folder + '/' + dirs + '/' + f)
+                        os.rename(train_folder + '/' + dirs + '/' + f,
+                                  val_folder + '/' + dirs + '/' + f)
 
 
 def decrease_data(folder, num_max):

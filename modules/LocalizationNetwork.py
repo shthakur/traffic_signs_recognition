@@ -1,6 +1,6 @@
 from .FullyConnected import FullyConnected
 from .ConvNet import ConvNet
-from .utils import get_convnet_output_size
+from .utils import utils
 from .Classifier import Classifier
 
 from torch import nn
@@ -12,7 +12,7 @@ class LocalizationNetwork(nn.Module):
     init_bias = torch.Tensor([1, 0, 0, 0, 1, 0])
 
     def __init__(self, conv_params, kernel_sizes,
-                 input_size, input_channels=3):
+                 input_size, input_channels=1):
         super(LocalizationNetwork, self).__init__()
 
         if not kernel_sizes:
@@ -27,8 +27,8 @@ class LocalizationNetwork(nn.Module):
         self.conv2 = ConvNet(conv_params[0], conv_params[1],
                              kernel_size=kernel_sizes[1],
                              batch_norm=False)
-        conv_output_size, _ = get_convnet_output_size([self.conv1, self.conv2],
-                                                      input_size)
+        conv_output_size, _ = utils.get_convnet_output_size([self.conv1, self.conv2],
+                                                            input_size)
 
         self.fc = FullyConnected(conv_output_size, conv_params[2])
         self.classifier = Classifier(conv_params[2], self.nbr_params)
