@@ -41,24 +41,25 @@ parser.add_argument('--locnet3', type=str, default=None, metavar='LN3',
                     help="Number of filters per CNN layer")
 parser.add_argument('--st', action='store_true',
                     help="Specifies if we want to use spatial transformer networks")
-parser.add_argument('--extra_debug', action='store_false',
+parser.add_argument('--extra_debug', action='store_true',
                     help="Use for printing more debugging information (default: false)")
-parser.add_argument('--use_pickle', action='store_true',
-                    help="Specifies if a pickle file is to be used. If passed data argument is ignored. (Default: True)")
+parser.add_argument('--no_use_pickle', action='store_true',
+                    help="Specifies if a pickle file is not to be used. If passed pickle argument is ignored and data is used instead. (Default: False)")
 parser.add_argument('--save_loc', type=str, default=".", help="Location to save model")
 
 
 def main():
-    args = parser.parse_args()
+    params = parser.parse_args()
     cuda = torch.cuda.is_available()
-    torch.manual_seed(args.seed)
-
+    torch.manual_seed(params.seed)
+    print(params)
+    params.use_pickle = not params.no_use_pickle
     if cuda:
-        torch.cuda.manual_seed(args.seed)
+        torch.cuda.manual_seed(params.seed)
 
     train_dataset, val_dataset = utils.get_dataset(params)
 
-    trainer = Trainer(args, train_dataset, val_dataset)
+    trainer = Trainer(params, train_dataset, val_dataset)
     trainer.load()
     trainer.train()
 

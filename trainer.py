@@ -2,9 +2,13 @@ import torch
 from networks import IDSIANetwork
 from torch import optim
 from torch.autograd import Variable
+from torch import nn
 from modules.EarlyStopping import EarlyStopping
 from modules.utils import utils
 from torch.utils.data import DataLoader
+
+import time
+import numpy as np
 
 
 class Trainer:
@@ -12,17 +16,17 @@ class Trainer:
         self.params = params
         self.train_data = train_data
         self.val_data = val_data
-        self.epochs = params.epochs
+
         print("Creating dataloaders")
         self.cuda_available = torch.cuda.is_available()
 
         if self.train_data is not None:
-            self.train_loader = DataLoader(dataset=train_data,
+            self.train_loader = DataLoader(dataset=self.train_data,
                                            shuffle=True,
                                            batch_size=params.batch_size,
                                            pin_memory=self.cuda_available)
         if self.val_data is not None:
-            self.val_loader = DataLoader(dataset=val_data,
+            self.val_loader = DataLoader(dataset=self.val_data,
                                          shuffle=False,
                                          batch_size=params.batch_size,
                                          pin_memory=self.cuda_available)
@@ -33,7 +37,7 @@ class Trainer:
         self.model = IDSIANetwork(self.params)
         self.optimizer = optim.Adam(filter(lambda p: p.requires_grad,
                                            self.model.parameters()),
-                                    lr=params.lr)
+                                    lr=self.params.lr)
 
         self.start_time = time.time()
         self.histories = {
@@ -43,20 +47,26 @@ class Trainer:
             "val_acc": np.empty(0, dtype=np.float32)
         }
 
+        # We minimize the cross entropy loss here
         self.early_stopping = EarlyStopping(
             self.model, self.optimizer, params=self.params,
-            patience=self.params.patience, minimize=False)
+            patience=self.params.patience, minimize=True)
 
         if self.params.resume:
             checkpoint = utils.load_checkpoint(self.params.resume)
             if checkpoint is not None:
 
                 if "params" in checkpoint:
-                    self.params.update(checkpoint['params'])
+                    # To make sure model architecture remains same
+                    self.params.locnet = checkpoint['params'].locnet
+                    self.params.locnet2 = checkpoint['params'].locnet2
+                    self.params.locnet3 = checkpoint['params'].locnet3
+                    self.params.st = checkpoint['params'].st
+
                     self.model = IDSIANetwork(self.params)
                     self.optimizer = optim.Adam(filter(lambda p: p.requires_grad,
                                                        self.model.parameters()),
-                                                lr=params.lr)
+                                                lr=self.params.lr)
 
                 self.model.load_state_dict(checkpoint['state_dict'])
                 self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -69,13 +79,15 @@ class Trainer:
             self.model = self.model.cuda()
 
     def train(self):
+        self.epochs = self.params.epochs
+
         criterion = nn.CrossEntropyLoss()
         start_epoch = 0
 
         self.model.train()
         print("Starting training")
         self.print_info()
-        for epoch in range(start_epoch, params.epochs):
+        for epoch in range(start_epoch, self.params.epochs):
             for i, (images, labels) in enumerate(self.train_loader):
                 images_batch = Variable(images)
                 labels_batch = Variable(labels)
@@ -99,7 +111,7 @@ class Trainer:
                                   loss.data[0]))
 
             train_acc, train_loss = self.validate_model(self.train_loader, self.model)
-            val_loss, val_acc = self.validate_model(self.val_loader, self.model)
+            val_acc, val_loss = self.validate_model(self.val_loader, self.model)
 
             self.histories['train_loss'] = np.append(self.histories['train_loss'], [train_loss])
             self.histories['val_loss'] = np.append(self.histories['val_loss'], [val_loss])
@@ -130,7 +142,7 @@ class Trainer:
 
             output = model(images_batch)
             loss = nn.functional.cross_entropy(output, labels_batch.long(), size_average=False)
-            total_loss += len(images_batch) * loss.data
+            total_loss += loss.data[0]
             total += len(labels_batch)
 
             if not self.cuda_available:
@@ -139,7 +151,7 @@ class Trainer:
                 correct += (labels_batch == output.max(1)[1]).data.sum()
         model.train()
 
-        average_loss = total_loss[0] / total
+        average_loss = total_loss / total
         return correct / total * 100, average_loss
 
     def print_info(self):
