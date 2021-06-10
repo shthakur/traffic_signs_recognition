@@ -3,15 +3,21 @@ from torch.autograd import Variable
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from torchvision import utils
+from torchvision import utils as vutils, datasets, transforms
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from skimage import exposure
 from PIL import Image
-from ..data import TrafficSignsDataset
+from data import TrafficSignsDataset
+from constants import IMG_SIZE, NUM_CLASSES
+from tqdm import tqdm
 
 import random
 import warnings
+import os
+import pickle
+import time
+import shutil
 
 
 class Utils:
@@ -34,14 +40,14 @@ class Utils:
         if params.use_pickle:
             data_images, data_labels = self.load_pickled_data(
                 params.train_pickle, ['features', 'labels'])
-            train_images, val_images, train_labels, val_labels = train_test_split(data_images,
-                                                                                  data_labels,
+            train_images, val_images, train_labels, val_labels = train_test_split(data_images[:256],
+                                                                                  data_labels[:256],
                                                                                   test_size=0.25)
             return TrafficSignsDataset(train_images, train_labels), TrafficSignsDataset(val_images, val_labels)
         else:
             train_dataset = datasets.ImageFolder(params.data + '/train_images',
                                                  transform=self.train_data_transforms)
-            val_dataset = datasets.ImageFolder(self.params.data + '/val_images',
+            val_dataset = datasets.ImageFolder(params.data + '/val_images',
                                                transform=self.val_data_transforms)
             return train_dataset, val_dataset
 
@@ -158,7 +164,7 @@ class Utils:
         images, labels = dataiter.next()
 
         # show images
-        imshow(utils.make_grid(images))
+        imshow(vutils.make_grid(images))
 
     def plot_classes(self, loader):
         class_images = {}
@@ -177,7 +183,7 @@ class Utils:
 
         final_images = [random.choice(class_images[i]) for i in sorted(class_images)]
 
-        imshow(utils.make_grid(torch.stack(final_images)))
+        imshow(vutils.make_grid(torch.stack(final_images)))
 
     def preprocess_dataset(self, X, y=None, use_tqdm=True):
         # Convert to single channel Y

@@ -1,6 +1,8 @@
 import random
 import numpy as np
 
+from constants import IMG_SIZE, NUM_CLASSES
+from tqdm import tqdm
 from skimage.transform import rotate, warp, ProjectiveTransform
 
 
