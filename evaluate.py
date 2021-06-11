@@ -29,11 +29,20 @@ def main():
     cuda = torch.cuda.is_available()
     params = parser.parse_args()
 
+    # For sake of trainer loading
+    params.cnn = ''
+    params.st = False
+    params.lr = 0.001
+    params.patience = 10
+
     test_dir = params.data + '/test_images'
     trainer = Trainer(params)
+    trainer.load()
+
     output_file = open(params.outfile, "w")
     output_file.write("Filename,ClassId\n")
     trainer.model.eval()
+
     for f in tqdm(os.listdir(test_dir)):
         if 'ppm' in f:
             data = utils.val_data_transforms(pil_loader(test_dir + '/' + f))

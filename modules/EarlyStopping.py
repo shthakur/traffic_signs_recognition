@@ -1,9 +1,10 @@
 import numpy as np
+import os
 from .utils import utils
 
 
 class EarlyStopping(object):
-    def __init__(self, model, optimizer, params=params, patience=100, minimize=True):
+    def __init__(self, model, optimizer, params=None, patience=100, minimize=True):
         self.minimize = minimize
         self.patience = patience
         self.model = model
@@ -33,7 +34,7 @@ class EarlyStopping(object):
             rest.update(state)
             print(value, acc)
             self.restore_path = utils.save_checkpoint(
-                rest, True, "/scratch/as10656/early_stopping_checkpoint")
+                rest, True, os.path.join(self.params.save_loc, "early_stopping_checkpoint"))
         elif self.best_monitored_epoch + self.patience < epoch:
             if self.restore_path is not None:
                 checkpoint = utils.load_checkpoint(self.restore_path)

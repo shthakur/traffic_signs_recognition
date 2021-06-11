@@ -8,7 +8,7 @@ from modules.FullyConnected import FullyConnected
 from modules.SoftMaxClassifier import SoftMaxClassifier
 from modules.Classifier import Classifier
 from modules.ConvNet import ConvNet
-from modules.utils import get_convnet_output_size
+from modules.utils import utils
 
 
 class GeneralNetwork(nn.Module):
