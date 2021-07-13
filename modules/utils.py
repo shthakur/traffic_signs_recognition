@@ -40,8 +40,8 @@ class Utils:
         if params.use_pickle:
             data_images, data_labels = self.load_pickled_data(
                 params.train_pickle, ['features', 'labels'])
-            train_images, val_images, train_labels, val_labels = train_test_split(data_images[:256],
-                                                                                  data_labels[:256],
+            train_images, val_images, train_labels, val_labels = train_test_split(data_images,
+                                                                                  data_labels,
                                                                                   test_size=0.25)
             return TrafficSignsDataset(train_images, train_labels), TrafficSignsDataset(val_images, val_labels)
         else:
