@@ -145,7 +145,12 @@ class Utils:
     def load_checkpoint(self, resume):
         if os.path.isfile(resume):
             print("=> loading checkpoint '{}'".format(resume))
-            checkpoint = torch.load(resume)
+
+            # Helps with loading models trained on GPU to run on CPU
+            if not torch.cuda.is_available():
+                checkpoint = torch.load(resume, map_location=lambda storage, location: storage)
+            else:
+                checkpoint = torch.load(resume)
             print("=> loaded checkpoint '{}' (epoch {})"
                   .format(resume, checkpoint['epoch']))
             return checkpoint
