@@ -1,5 +1,8 @@
-*~
-data
-*.pyc
-*.pth
 *.csv
+data*
+!data.py
+*.pyc
+__pycache__
+*.pth
+*.pth.tar
+*.p
